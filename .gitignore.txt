@@ -1,0 +1,95 @@
+.vs/
+*.user
+*.suo
+*.vspscc
+*.vssscc
+*.dll
+
+.dll
+bin/
+obj/
+
+
+## Ignore Visual Studio temporary files, build results, and
+## user-specific files
+
+# Build Folders
+bin/
+obj/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# ASP.NET Scaffolding
+ScaffoldingReadMe.txt
+
+# Dotnet CLI
+*.lock.json
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# ASP.NET Core
+appsettings.Development.json
+appsettings.*.json
+secrets.json
+
+# Entity Framework
+*.ide.db
+*.dbmdl
+*.jfm
+
+# Rider (JetBrains)
+.idea/
+*.sln.iml
+
+# VS Code
+.vscode/
+
+# Others
+*.log
+*.tlog
+*.vspscc
+*.vssscc
+.vs/
+_ReSharper*/
+*.ncrunch*
+*.localhistory/
+*.DS_Store
+*.sass-cache/
+*.class
+*.psess
+*.pidb
+*.svclog
+*.scc
+*.cache
+*.pdb
+
+# NuGet
+*.nupkg
+*.snupkg
+.nuget/
+
+# Logs
+*.log
+logs/
+
+# Test results
+TestResults/
+
+# Publish output
+publish/
+
+# Coverage reports
+coverage/
+*.coverage
+*.coveragexml
+
+# npm / node_modules (if frontend included)
+node_modules/
+dist/
+.env
+.env.*
