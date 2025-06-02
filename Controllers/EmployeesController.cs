@@ -1,7 +1,7 @@
-﻿using DeployProject.Data;
-using DeployProject.Models;
+﻿using DeployProject.Models;
 using DeployProject.Models.Entities;
-using Microsoft.AspNetCore.Http;
+using DeployProject.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DeployProject.Controllers
@@ -10,107 +10,137 @@ namespace DeployProject.Controllers
     [ApiController]
     public class EmployeesController : ControllerBase
     {
-        private readonly ApplicationDbContext _dbContext;
+        private readonly IEmployeeService _employeeService;
+        private readonly ILogger<EmployeesController> _logger;
 
-        public EmployeesController(ApplicationDbContext dbContext)
+        public EmployeesController(IEmployeeService employeeService, ILogger<EmployeesController> logger)
         {
-            _dbContext = dbContext;
+            _employeeService = employeeService;
+            _logger = logger;
         }
 
         [HttpGet]
-        [Route("")]
         public IActionResult GetAllEmployees()
         {
+            _logger.LogInformation("Received request to fetch all employees");
+
             try
             {
-                var employees = _dbContext.Employees.ToList();
-                if (employees == null || !employees.Any())
+                var employees = _employeeService.GetAll();
+
+                if (!employees.Any())
                 {
+                    _logger.LogWarning("No employees found in database");
                     return NotFound("No employees found.");
                 }
+
+                _logger.LogInformation("Successfully fetched {Count} employees", employees.Count());
                 return Ok(employees);
             }
             catch (Exception ex)
             {
-                // Optionally log the exception here
-                // _logger.LogError(ex, "An error occurred while retrieving employees.");
+                _logger.LogError(ex, "Error occurred while fetching all employees");
+                return StatusCode(500, "Internal server error");
+            }
+        }
 
-                return StatusCode(500, "An unexpected error occurred. Please try again later.");
+        [HttpGet("{id:guid}")]
+        public IActionResult GetEmployeeById(Guid id)
+        {
+            _logger.LogInformation("Received request to fetch employee with ID: {Id}", id);
+
+            try
+            {
+                var emp = _employeeService.GetById(id);
+
+                if (emp == null)
+                {
+                    _logger.LogWarning("Employee with ID {Id} not found", id);
+                    return NotFound($"Employee with ID {id} not found.");
+                }
+
+                _logger.LogInformation("Employee with ID {Id} found", id);
+                return Ok(emp);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while fetching employee with ID: {Id}", id);
+                return StatusCode(500, "Internal server error");
             }
         }
 
         [HttpPost]
-        [Route("")]
-        public IActionResult AddEmployee(AddEmployeeDto addEmployeeDto)
+        [Authorize(Roles = "ADMIN")]
+        public IActionResult AddEmployee([FromBody] AddEmployeeDto dto)
         {
-            var employeeEntity = new Employee()
-            {
-                Name = addEmployeeDto.Name,
-                Email = addEmployeeDto.Email,
-                Phone = addEmployeeDto.Phone,
-                Salary = addEmployeeDto.Salary
-            };
+            _logger.LogInformation("Received request to add a new employee");
 
-            _dbContext.Employees.Add(employeeEntity);
-            _dbContext.SaveChanges();
-            return Ok(addEmployeeDto);
-        }
-
-        [HttpGet]
-        [Route("{id:guid}")]
-        public IActionResult GetEmployeeById(Guid id)
-        {
-            var Emp = _dbContext.Employees.Find(id);
-            if (Emp is null)
+            if (!ModelState.IsValid)
             {
-                return NotFound();
+                _logger.LogWarning("Invalid model state for AddEmployeeDto");
+                return BadRequest(ModelState);
             }
-            return Ok(Emp);
-        }
 
-        [HttpPut]
-        [Route("{id:guid}")]
-        public IActionResult UpdateEmployee(Guid id, UpdateEmployeeDto updateEmployeeDto)
-        {
-            var updateEmployee = _dbContext.Employees.Find(id);
-            if (updateEmployee is null)
+            try
             {
-                return NotFound();
+                _employeeService.Add(dto);
+                _logger.LogInformation("Successfully added employee: {Name}", dto.Name);
+                return Ok(dto);
             }
-            else
+            catch (Exception ex)
             {
-                updateEmployee.Name = updateEmployeeDto.Name;
-                updateEmployee.Email = updateEmployeeDto.Email;
-                updateEmployee.Salary = updateEmployeeDto.Salary;
-                updateEmployee.Phone = updateEmployeeDto.Phone;
-
-                _dbContext.SaveChanges();
-                return Ok(updateEmployee);
+                _logger.LogError(ex, "Error occurred while adding employee: {Name}", dto.Name);
+                return StatusCode(500, "Internal server error");
             }
         }
 
-        [HttpDelete]
-        [Route("{id:guid}")]
+        [HttpPut("{id:guid}")]
+        [Authorize(Roles = "ADMIN")]
+        public IActionResult UpdateEmployee(Guid id, [FromBody] UpdateEmployeeDto dto)
+        {
+            _logger.LogInformation("Received request to update employee with ID: {Id}", id);
+
+            if (!ModelState.IsValid)
+            {
+                _logger.LogWarning("Invalid model state for UpdateEmployeeDto");
+                return BadRequest(ModelState);
+            }
+
+            try
+            {
+                _employeeService.Update(id, dto);
+                _logger.LogInformation("Successfully updated employee with ID: {Id}", id);
+                return Ok("Updated successfully");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while updating employee with ID: {Id}", id);
+                return NotFound(ex.Message);
+            }
+        }
+
+        [HttpDelete("{id:guid}")]
+        [Authorize(Roles = "ADMIN")]
         public IActionResult DeleteEmployee(Guid id)
         {
-            var deleteEmployee = _dbContext.Employees.Find(id);
-            if (deleteEmployee is null)
+            _logger.LogInformation("Received request to delete employee with ID: {Id}", id);
+
+            try
             {
-                return NotFound();
+                _employeeService.Delete(id);
+                _logger.LogInformation("Successfully deleted employee with ID: {Id}", id);
+                return Ok("Deleted successfully");
             }
-            else
+            catch (Exception ex)
             {
-                _dbContext.Employees.Remove(deleteEmployee);
-                _dbContext.SaveChanges();
-                return Ok();
+                _logger.LogError(ex, "Error occurred while deleting employee with ID: {Id}", id);
+                return NotFound(ex.Message);
             }
         }
-
-
-
-
     }
 }
+
+
 
 /*
  Debug

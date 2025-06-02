@@ -1,5 +1,4 @@
 ﻿using DeployProject.Models.Entities;
-
 using Microsoft.EntityFrameworkCore;
 
 namespace DeployProject.Data
@@ -10,12 +9,11 @@ namespace DeployProject.Data
             : base(options)
         {
         }
-   
-        //protected override void OnModelCreating(ModelBuilder modelBuilder)
-        //{
-        //    base.OnModelCreating(modelBuilder);
-        //}
+
 
         public DbSet<Employee> Employees { get; set; }
+        public DbSet<User> Users { get; set; }
+        public DbSet<Role> Roles { get; set; }
+        public DbSet<UserRole> UserRoles { get; set; }
     }
 }
