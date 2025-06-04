@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.Text;
 using DeployProject.Services.Interfaces;
 using DeployProject.Services;
+using DeployProject.Middleware;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -92,6 +93,7 @@ builder.Services.AddSwaggerGen(opt =>
 });
 
 var app = builder.Build();
+app.UseMiddleware<RequestTimingMiddleware>();
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
