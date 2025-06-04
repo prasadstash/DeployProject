@@ -7,7 +7,11 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.Text;
 using DeployProject.Services.Interfaces;
 using DeployProject.Services;
+<<<<<<< Updated upstream
 using DeployProject.Middleware;
+=======
+using DeployProject.Interfaces;
+>>>>>>> Stashed changes
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -15,6 +19,8 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 
 builder.Services.AddControllers();
+
+builder.Services.AddTransient<IBlobService, BlobService>();
 
 //add Entity Framework Core with SQL Server
 builder.Services.AddDbContext<ApplicationDbContext>(options =>

@@ -1,5 +1,7 @@
-﻿using DeployProject.Models;
+﻿using DeployProject.Interfaces;
+using DeployProject.Models;
 using DeployProject.Models.Entities;
+using DeployProject.Services;
 using DeployProject.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,11 +14,13 @@ namespace DeployProject.Controllers
     {
         private readonly IEmployeeService _employeeService;
         private readonly ILogger<EmployeesController> _logger;
+        private readonly IBlobService _blobService;
 
-        public EmployeesController(IEmployeeService employeeService, ILogger<EmployeesController> logger)
+        public EmployeesController(IEmployeeService employeeService, ILogger<EmployeesController> logger, IBlobService blobService)
         {
             _employeeService = employeeService;
             _logger = logger;
+            _blobService = blobService;
         }
 
         [HttpGet]
@@ -137,6 +141,40 @@ namespace DeployProject.Controllers
                 return NotFound(ex.Message);
             }
         }
+
+        [HttpPost("upload")]
+        public async Task<IActionResult> UploadEmployee([FromForm] AddEmployeeDto dto, IFormFile profileImage)
+        {
+            try
+            {
+                string imageUrl = null;
+
+                if (profileImage != null)
+                {
+                    string fileName = $"{Guid.NewGuid()}{Path.GetExtension(profileImage.FileName)}";
+                    imageUrl = await _blobService.UploadFileAsync(profileImage, fileName);
+                }
+
+                var employee = new Employee
+                {
+                    Name = dto.Name,
+                    Email = dto.Email,
+                    Phone = dto.Phone,
+                    Salary = dto.Salary,
+                    ProfileImageUrl = imageUrl
+                };
+
+                _employeeService.Addd(employee); // Modify your Add method to accept Employee instead of DTO
+
+                return Ok(employee);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error uploading employee profile");
+                return StatusCode(500, "Internal server error");
+            }
+        }
+
     }
 }
 
