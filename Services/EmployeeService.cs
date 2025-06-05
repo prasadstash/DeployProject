@@ -65,7 +65,9 @@ namespace DeployProject.Services
                     Name = dto.Name,
                     Email = dto.Email,
                     Phone = dto.Phone,
-                    Salary = dto.Salary
+                    Salary = dto.Salary,
+                    ProfileImageUrl = dto.ProfileImageUrl,
+
                 };
 
                 _context.Employees.Add(employee);
