@@ -7,11 +7,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.Text;
 using DeployProject.Services.Interfaces;
 using DeployProject.Services;
-<<<<<<< Updated upstream
 using DeployProject.Middleware;
-=======
 using DeployProject.Interfaces;
->>>>>>> Stashed changes
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -61,14 +58,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
 // Add Swagger
 builder.Services.AddEndpointsApiExplorer();
 
-
-
-
-
-// Configure the HTTP request pipeline.
-
-// Enable Swagger middleware
-
 builder.Services.AddSwaggerGen(opt =>
 {
     opt.SwaggerDoc("v1", new OpenApiInfo { Title = "MyAPI", Version = "v1" });
@@ -100,12 +89,17 @@ builder.Services.AddSwaggerGen(opt =>
 
 var app = builder.Build();
 app.UseMiddleware<RequestTimingMiddleware>();
+//app.UseHttpsRedirection();
+app.UseCors("AllowAllOrigins");
 app.UseSwagger();
+
 app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
     c.RoutePrefix = string.Empty; // serve Swagger UI at root ("/")
 });
+
+app.UseAuthentication();
 
 app.UseAuthorization();
 

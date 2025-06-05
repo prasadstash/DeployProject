@@ -1,7 +1,6 @@
 ﻿using DeployProject.Interfaces;
 using DeployProject.Models;
 using DeployProject.Models.Entities;
-using DeployProject.Services;
 using DeployProject.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -16,7 +15,10 @@ namespace DeployProject.Controllers
         private readonly ILogger<EmployeesController> _logger;
         private readonly IBlobService _blobService;
 
-        public EmployeesController(IEmployeeService employeeService, ILogger<EmployeesController> logger, IBlobService blobService)
+        public EmployeesController(
+            IEmployeeService employeeService,
+            ILogger<EmployeesController> logger,
+            IBlobService blobService)
         {
             _employeeService = employeeService;
             _logger = logger;
@@ -24,131 +26,97 @@ namespace DeployProject.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetAllEmployees()
+        public IActionResult GetAll()
         {
-            _logger.LogInformation("Received request to fetch all employees");
-
             try
             {
                 var employees = _employeeService.GetAll();
-
-                if (!employees.Any())
-                {
-                    _logger.LogWarning("No employees found in database");
-                    return NotFound("No employees found.");
-                }
-
-                _logger.LogInformation("Successfully fetched {Count} employees", employees.Count());
-                return Ok(employees);
+                return employees.Any() ? Ok(employees) : NotFound("No employees found.");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while fetching all employees");
-                return StatusCode(500, "Internal server error");
+                return HandleError("fetching all employees", ex);
             }
         }
 
         [HttpGet("{id:guid}")]
-        public IActionResult GetEmployeeById(Guid id)
+        public IActionResult GetById(Guid id)
         {
-            _logger.LogInformation("Received request to fetch employee with ID: {Id}", id);
-
             try
             {
                 var emp = _employeeService.GetById(id);
-
-                if (emp == null)
-                {
-                    _logger.LogWarning("Employee with ID {Id} not found", id);
-                    return NotFound($"Employee with ID {id} not found.");
-                }
-
-                _logger.LogInformation("Employee with ID {Id} found", id);
-                return Ok(emp);
+                return emp is not null ? Ok(emp) : NotFound($"Employee with ID {id} not found.");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while fetching employee with ID: {Id}", id);
-                return StatusCode(500, "Internal server error");
+                return HandleError($"fetching employee with ID: {id}", ex);
             }
         }
 
         [HttpPost]
         [Authorize(Roles = "ADMIN")]
-        public IActionResult AddEmployee([FromBody] AddEmployeeDto dto)
+        public IActionResult Add([FromBody] AddEmployeeDto dto)
         {
-            _logger.LogInformation("Received request to add a new employee");
-
             if (!ModelState.IsValid)
-            {
-                _logger.LogWarning("Invalid model state for AddEmployeeDto");
                 return BadRequest(ModelState);
-            }
 
             try
             {
-                _employeeService.Add(dto);
-                _logger.LogInformation("Successfully added employee: {Name}", dto.Name);
-                return Ok(dto);
+                var employee = new Employee
+                {
+                    Name = dto.Name,
+                    Email = dto.Email,
+                    Phone = dto.Phone,
+                    Salary = dto.Salary,
+                };
+                _employeeService.Add(employee);
+                return Ok("Employee added successfully");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while adding employee: {Name}", dto.Name);
-                return StatusCode(500, "Internal server error");
+                return HandleError("adding new employee", ex);
             }
         }
 
         [HttpPut("{id:guid}")]
         [Authorize(Roles = "ADMIN")]
-        public IActionResult UpdateEmployee(Guid id, [FromBody] UpdateEmployeeDto dto)
+        public IActionResult Update(Guid id, [FromBody] UpdateEmployeeDto dto)
         {
-            _logger.LogInformation("Received request to update employee with ID: {Id}", id);
-
             if (!ModelState.IsValid)
-            {
-                _logger.LogWarning("Invalid model state for UpdateEmployeeDto");
                 return BadRequest(ModelState);
-            }
 
             try
             {
                 _employeeService.Update(id, dto);
-                _logger.LogInformation("Successfully updated employee with ID: {Id}", id);
                 return Ok("Updated successfully");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while updating employee with ID: {Id}", id);
-                return NotFound(ex.Message);
+                return HandleError($"updating employee with ID: {id}", ex, true);
             }
         }
 
         [HttpDelete("{id:guid}")]
         [Authorize(Roles = "ADMIN")]
-        public IActionResult DeleteEmployee(Guid id)
+        public IActionResult Delete(Guid id)
         {
-            _logger.LogInformation("Received request to delete employee with ID: {Id}", id);
-
             try
             {
                 _employeeService.Delete(id);
-                _logger.LogInformation("Successfully deleted employee with ID: {Id}", id);
                 return Ok("Deleted successfully");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while deleting employee with ID: {Id}", id);
-                return NotFound(ex.Message);
+                return HandleError($"deleting employee with ID: {id}", ex, true);
             }
         }
 
         [HttpPost("upload")]
-        public async Task<IActionResult> UploadEmployee([FromForm] AddEmployeeDto dto, IFormFile profileImage)
+        public async Task<IActionResult> Upload([FromForm] AddEmployeeDto dto, IFormFile profileImage)
         {
             try
             {
-                string imageUrl = null;
-
+                string imageUrl = "";
                 if (profileImage != null)
                 {
                     string fileName = $"{Guid.NewGuid()}{Path.GetExtension(profileImage.FileName)}";
@@ -164,19 +132,29 @@ namespace DeployProject.Controllers
                     ProfileImageUrl = imageUrl
                 };
 
-                _employeeService.Addd(employee); // Modify your Add method to accept Employee instead of DTO
+                _employeeService.Add(employee);  
 
                 return Ok(employee);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error uploading employee profile");
-                return StatusCode(500, "Internal server error");
+                return HandleError("uploading employee profile", ex);
             }
         }
 
+        private IActionResult HandleError(string action, Exception ex, bool notFoundOnCustomEx = false)
+        {
+            _logger.LogError(ex, "Error occurred while {Action}", action);
+
+            // Custom logic: convert known messages into NotFound
+            if (notFoundOnCustomEx && ex.Message.Contains("not found", StringComparison.OrdinalIgnoreCase))
+                return NotFound(ex.Message);
+
+            return StatusCode(500, "Internal server error");
+        }
     }
 }
+
 
 
 

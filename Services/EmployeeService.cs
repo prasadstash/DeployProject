@@ -54,7 +54,7 @@ namespace DeployProject.Services
             }
         }
 
-        public void Add(AddEmployeeDto dto)
+        public void Add(Employee dto)
         {
             _logger.LogInformation("Adding a new employee: {Name}", dto.Name);
 
