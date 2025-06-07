@@ -31,6 +31,7 @@ namespace DeployProject.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "ADMIN")]
         public IActionResult GetAll()
         {
             try
