@@ -1,6 +1,7 @@
 ﻿using DeployProject.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using DeployProject.Models.Entities;
+using Microsoft.AspNetCore.Authorization;
 
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
@@ -24,6 +25,7 @@ namespace JWT_Authentication_Authorization.Controllers
         }
 
         [HttpPost("assignRole")]
+        [Authorize(Roles = "ADMIN")]
         public bool AssignRoleToUser([FromBody] AddUserRole userRole)
         {
             var addedUserRole = _auth.AssignRoleToUser(userRole);
@@ -31,6 +33,7 @@ namespace JWT_Authentication_Authorization.Controllers
         }
 
         [HttpPost("addUser")]
+      
         public User AddUser([FromBody] User user)
         {
             var addeduser = _auth.AddUser(user);
@@ -38,6 +41,7 @@ namespace JWT_Authentication_Authorization.Controllers
         }
 
         [HttpPost("addRole")]
+        [Authorize(Roles = "ADMIN")]
         public Role AddRole([FromBody] Role role)
         {
             var addedRole = _auth.AddRole(role);
